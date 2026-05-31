@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -36,7 +35,11 @@
 
 <div id="gameover">GAME OVER</div>
 
-<button onclick="startGame()">Start</button>
+
+<div style="margin-top:10px;">
+  <button id="startBtn" onclick="startGame()">Start</button>
+  <button id="stopBtn" onclick="endGame()" style="display:none;">Lopeta</button>
+</div>
 
 <script>
 const COLS=10, ROWS=20;
@@ -206,6 +209,25 @@ function startGame(){
 
   checkGameOver(); // jos heti häviö
   draw();
+
+function startGame(){
+  newGrid();
+  piece=randomPiece();
+  nextPiece=randomPiece();
+  drawNext();
+  gameOver=false;
+  document.getElementById("gameover").style.display="none";
+  clearInterval(interval);
+  interval=setInterval(tick,500);
+
+  checkGameOver();
+  draw();
+
+  // ✅ nappien vaihto
+  document.getElementById("startBtn").style.display="none";
+  document.getElementById("stopBtn").style.display="inline-block";
+}
+
 }
 
 // ✅ NÄPPÄIMET
@@ -225,7 +247,18 @@ if(e.key === " " || e.code === "Space"){
   if(e.key==="Escape" || e.key==="q"){
     endGame();
     return;
-  }
+
+function endGame(){
+  gameOver=true;
+  clearInterval(interval);
+  document.getElementById("gameover").style.display="block";
+
+  // ✅ nappien vaihto takaisin
+  document.getElementById("startBtn").style.display="inline-block";
+  document.getElementById("stopBtn").style.display="none";
+}
+
+  
 
   if(!piece) return;
 
