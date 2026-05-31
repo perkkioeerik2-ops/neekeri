@@ -1,3 +1,48 @@
+<!DOCTYPE html>
+
+function startGame(){
+  console.log("START toimii");
+
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Tetris</title>
+<style>
+  body { font-family: Arial; text-align: center; }
+  #wrapper { display:flex; justify-content:center; gap:20px; }
+  #grid { display:grid; grid-template-columns:repeat(10,20px); }
+  .cell { width:20px; height:20px; border:1px solid #ccc; background:#eee; }
+  .filled { background:blue; }
+  .ghost { background:rgba(0,0,255,0.3); }
+  #next { display:grid; grid-template-columns:repeat(4,20px); }
+
+  #gameover {
+    font-size: 30px;
+    color: red;
+    margin-top: 10px;
+    display: none;
+  }
+</style>
+</head>
+<body>
+
+<h2>Tetris</h2>
+
+<div id="wrapper">
+  <div id="grid"></div>
+  <div>
+    <p>Next:</p>
+    <div id="next"></div>
+  </div>
+</div>
+
+<div id="gameover">GAME OVER</div>
+
+
+<div style="margin-top:10px;">
+  <button id="startBtn" onclick="startGame()">Start</button>
+  <button id="stopBtn" onclick="endGame()" style="display:none;">Lopeta</button>
+</div>
 
 <script>
 const COLS=10, ROWS=20;
@@ -63,6 +108,7 @@ function merge(){
 }
 
 function checkGameOver(){
+  // jos uusi palikka törmää heti -> häviö
   if(collide(piece.x, piece.y, piece.shape)){
     endGame();
   }
@@ -72,10 +118,6 @@ function endGame(){
   gameOver=true;
   clearInterval(interval);
   document.getElementById("gameover").style.display="block";
-
-  // nappien vaihto takaisin
-  document.getElementById("startBtn").style.display="inline-block";
-  document.getElementById("stopBtn").style.display="none";
 }
 
 function getGhostY(){
@@ -94,7 +136,8 @@ function tick(){
     piece=nextPiece;
     nextPiece=randomPiece();
     drawNext();
-    checkGameOver();
+
+    checkGameOver(); // ✅ tarkistus kattoon osumisesta
   }
   draw();
 }
@@ -111,6 +154,7 @@ function draw(){
 
       let filled=grid[y][x];
 
+      // ghost
       piece.shape.forEach((row,py)=>{
         row.forEach((v,px)=>{
           if(v && piece.x+px===x && ghostY+py===y && !filled){
@@ -119,6 +163,7 @@ function draw(){
         });
       });
 
+      // piece
       piece.shape.forEach((row,py)=>{
         row.forEach((v,px)=>{
           if(v && piece.x+px===x && piece.y+py===y){
@@ -162,34 +207,65 @@ function startGame(){
   drawNext();
   gameOver=false;
   document.getElementById("gameover").style.display="none";
+  clearInterval(interval);
+  interval=setInterval(tick,500);
 
+  checkGameOver(); // jos heti häviö
+  draw();
+
+function startGame(){
+  newGrid();
+  piece=randomPiece();
+  nextPiece=randomPiece();
+  drawNext();
+  gameOver=false;
+  document.getElementById("gameover").style.display="none";
   clearInterval(interval);
   interval=setInterval(tick,500);
 
   checkGameOver();
   draw();
 
-  // nappien vaihto
+  // ✅ nappien vaihto
   document.getElementById("startBtn").style.display="none";
   document.getElementById("stopBtn").style.display="inline-block";
 }
 
-// NÄPPÄIMET
+}
+
+// ✅ NÄPPÄIMET
 window.addEventListener("keydown",e=>{
-  if(gameOver || !piece) return;
+  if(gameOver) return;
 
-  if(e.key === " " || e.code === "Space"){
-    while(!collide(piece.x, piece.y+1, piece.shape)){
-      piece.y++;
-    }
+// ✅ SPACE = pudota heti maahan
+if(e.key === " " || e.code === "Space"){
+  while(!collide(piece.x, piece.y+1, piece.shape)){
+    piece.y++;
   }
+}
+``
 
+
+  // ✅ Lopeta peli napit
   if(e.key==="Escape" || e.key==="q"){
     endGame();
     return;
-  }
 
-  if(e.key==="ArrowLeft" && !collide(piece.x-1,piece.y,piece.shape)) piece.x--;
+function endGame(){
+  gameOver=true;
+  clearInterval(interval);
+  document.getElementById("gameover").style.display="block";
+
+  // ✅ nappien vaihto takaisin
+  document.getElementById("startBtn").style.display="inline-block";
+  document.getElementById("stopBtn").style.display="none";
+}
+
+  
+
+  if(!piece) return;
+
+ if(e.key==="ArrowLeft" && ...) !collide(piece.x-1,piece.y,piece.shape)) piece.x--;
   if(e.key==="ArrowRight" && !collide(piece.x+1,piece.y,piece.shape)) piece.x++;
   if(e.key==="ArrowDown" && !collide(piece.x,piece.y+1,piece.shape)) piece.y++;
 
@@ -201,3 +277,7 @@ window.addEventListener("keydown",e=>{
   draw();
 });
 </script>
+
+</body>
+
+
