@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -211,6 +212,15 @@ function startGame(){
 window.addEventListener("keydown",e=>{
   if(gameOver) return;
 
+// ✅ SPACE = pudota heti maahan
+if(e.key === " " || e.code === "Space"){
+  while(!collide(piece.x, piece.y+1, piece.shape)){
+    piece.y++;
+  }
+}
+``
+
+
   // ✅ Lopeta peli napit
   if(e.key==="Escape" || e.key==="q"){
     endGame();
@@ -236,34 +246,3 @@ window.addEventListener("keydown",e=>{
 
 
   
-
-window.addEventListener("keydown",e=>{
-  if(gameOver) return;
-
-  // ✅ Lopeta peli
-  if(e.key==="Escape" || e.key==="q"){
-    endGame();
-    return;
-  }
-
-  if(!piece) return;
-
-  if(e.key==="ArrowLeft" && !collide(piece.x-1,piece.y,piece.shape)) piece.x--;
-  if(e.key==="ArrowRight" && !collide(piece.x+1,piece.y,piece.shape)) piece.x++;
-  if(e.key==="ArrowDown" && !collide(piece.x,piece.y+1,piece.shape)) piece.y++;
-
-  // ✅ SPACE = hard drop
-  if(e.key === " " || e.code === "Space"){
-    while(!collide(piece.x, piece.y+1, piece.shape)){
-      piece.y++;
-    }
-  }
-
-  if(e.key==="ArrowUp"){
-    const r=rotate(piece.shape);
-    if(!collide(piece.x,piece.y,r)) piece.shape=r;
-  }
-
-  draw();
-});
- 
