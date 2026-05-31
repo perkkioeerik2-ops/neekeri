@@ -195,3 +195,38 @@ window.addEventListener("keydown",e=>{
 
 </body>
 </html>
+
+
+
+for block in blocks:
+    if block.rect.top <= 0:
+        game_over = True
+
+      
+for event in pygame.event.get():
+    if event.type == pygame.QUIT:
+        running = False
+
+    if event.type == pygame.KEYDOWN:
+        if event.key == pygame.K_ESCAPE:  # ESC lopettaa pelin
+            running = False
+
+      
+if event.key == pygame.K_q:
+    running = False
+
+      
+if game_over:
+    print("Hävisit pelin!")
+    running = False
+
+      
+if game_over:
+    font = pygame.font.SysFont(None, 48)
+    text = font.render("GAME OVER", True, (255, 0, 0))
+    screen.blit(text, (200, 200))
+    pygame.display.flip()
+    pygame.time.delay(2000)
+    running = False
+
+
