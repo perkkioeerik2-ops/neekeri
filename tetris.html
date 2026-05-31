@@ -1,0 +1,197 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Tetris</title>
+<style>
+  body { font-family: Arial; text-align: center; }
+  #wrapper { display:flex; justify-content:center; gap:20px; }
+  #grid { display:grid; grid-template-columns:repeat(10,20px); }
+  .cell { width:20px; height:20px; border:1px solid #ccc; background:#eee; }
+  .filled { background:blue; }
+  .ghost { background:rgba(0,0,255,0.3); }
+  #next { display:grid; grid-template-columns:repeat(4,20px); }
+</style>
+</head>
+<body>
+
+<h2>Tetris</h2>
+
+<div id="wrapper">
+  <div id="grid"></div>
+  <div>
+    <p>Next:</p>
+    <div id="next"></div>
+  </div>
+</div>
+
+<button onclick="startGame()">Start</button>
+
+<script>
+const COLS=10, ROWS=20;
+
+const SHAPES=[
+ [[1,1,1,1]],
+ [[1,1],[1,1]],
+ [[0,1,0],[1,1,1]],
+ [[1,0,0],[1,1,1]],
+ [[0,0,1],[1,1,1]],
+ [[0,1,1],[1,1,0]],
+ [[1,1,0],[0,1,1]],
+];
+
+let grid=[], piece, nextPiece, interval;
+
+function newGrid(){
+  grid=Array.from({length:ROWS},()=>Array(COLS).fill(0));
+}
+
+function randomPiece(){
+  return { shape:SHAPES[Math.floor(Math.random()*SHAPES.length)], x:3, y:0 };
+}
+
+function rotate(shape){
+  return shape[0].map((_,i)=>shape.map(r=>r[i]).reverse());
+}
+
+function collide(x,y,shape){
+  for(let py=0;py<shape.length;py++){
+    for(let px=0;px<shape[py].length;px++){
+      if(!shape[py][px]) continue;
+      const nx=x+px, ny=y+py;
+      if(nx<0||nx>=COLS||ny>=ROWS) return true;
+      if(ny>=0 && grid[ny][nx]) return true;
+    }
+  }
+  return false;
+}
+
+function clearLines(){
+  for(let y=ROWS-1;y>=0;y--){
+    if(grid[y].every(c=>c===1)){
+      grid.splice(y,1);
+      grid.unshift(Array(COLS).fill(0));
+      y++;
+    }
+  }
+}
+
+function merge(){
+  piece.shape.forEach((row,py)=>{
+    row.forEach((v,px)=>{
+      if(v){
+        const x=piece.x+px, y=piece.y+py;
+        if(y>=0&&y<ROWS&&x>=0&&x<COLS){
+          grid[y][x]=1;
+        }
+      }
+    });
+  });
+  clearLines();
+}
+
+function getGhostY(){
+  let y=piece.y;
+  while(!collide(piece.x,y+1,piece.shape)) y++;
+  return y;
+}
+
+function tick(){
+  if(!collide(piece.x,piece.y+1,piece.shape)){
+    piece.y++;
+  } else {
+    merge();
+    piece=nextPiece;
+    nextPiece=randomPiece();
+    drawNext();
+  }
+  draw();
+}
+
+function draw(){
+  const el=document.getElementById("grid");
+  el.innerHTML="";
+  const ghostY=getGhostY();
+
+  for(let y=0;y<ROWS;y++){
+    for(let x=0;x<COLS;x++){
+      const div=document.createElement("div");
+      div.className="cell";
+
+      let filled=grid[y][x];
+
+      // ghost
+      piece.shape.forEach((row,py)=>{
+        row.forEach((v,px)=>{
+          if(v && piece.x+px===x && ghostY+py===y && !filled){
+            div.classList.add("ghost");
+          }
+        });
+      });
+
+      // piece
+      piece.shape.forEach((row,py)=>{
+        row.forEach((v,px)=>{
+          if(v && piece.x+px===x && piece.y+py===y){
+            filled=1;
+          }
+        });
+      });
+
+      if(filled) div.classList.add("filled");
+
+      el.appendChild(div);
+    }
+  }
+}
+
+function drawNext(){
+  const el=document.getElementById("next");
+  el.innerHTML="";
+  for(let y=0;y<4;y++){
+    for(let x=0;x<4;x++){
+      const d=document.createElement("div");
+      d.className="cell";
+
+      let f=0;
+      nextPiece.shape.forEach((row,py)=>{
+        row.forEach((v,px)=>{
+          if(v && px===x && py===y) f=1;
+        });
+      });
+
+      if(f) d.classList.add("filled");
+      el.appendChild(d);
+    }
+  }
+}
+
+function startGame(){
+  newGrid();
+  piece=randomPiece();
+  nextPiece=randomPiece();
+  drawNext();
+  clearInterval(interval);
+  interval=setInterval(tick,500);
+  draw();
+}
+
+window.addEventListener("keydown",e=>{
+  if(!piece) return;
+
+  if(e.key==="ArrowLeft" && !collide(piece.x-1,piece.y,piece.shape)) piece.x--;
+  if(e.key==="ArrowRight" && !collide(piece.x+1,piece.y,piece.shape)) piece.x++;
+  if(e.key==="ArrowDown" && !collide(piece.x,piece.y+1,piece.shape)) piece.y++;
+
+  if(e.key==="ArrowUp"){
+    const r=rotate(piece.shape);
+    if(!collide(piece.x,piece.y,r)) piece.shape=r;
+  }
+
+  draw();
+});
+</script>
+
+</body>
+</html>
