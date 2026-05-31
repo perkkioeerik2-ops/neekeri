@@ -1,48 +1,107 @@
+
 <!DOCTYPE html>
-
-function startGame(){
-  console.log("START toimii");
-
 <html>
 <head>
 <meta charset="UTF-8">
 <title>Tetris</title>
-<style>
-  body { font-family: Arial; text-align: center; }
-  #wrapper { display:flex; justify-content:center; gap:20px; }
-  #grid { display:grid; grid-template-columns:repeat(10,20px); }
-  .cell { width:20px; height:20px; border:1px solid #ccc; background:#eee; }
-  .filled { background:blue; }
-  .ghost { background:rgba(0,0,255,0.3); }
-  #next { display:grid; grid-template-columns:repeat(4,20px); }
 
-  #gameover {
-    font-size: 30px;
-    color: red;
-    margin-top: 10px;
-    display: none;
-  }
+<style>
+body {
+  font-family: Arial;
+  text-align: center;
+  background:#111;
+  color:white;
+}
+
+h2 {
+  margin-bottom:5px;
+}
+
+#wrapper {
+  display:flex;
+  justify-content:center;
+  gap:30px;
+}
+
+#grid {
+  display:grid;
+  grid-template-columns:repeat(10,24px);
+  background:#222;
+  padding:5px;
+  border-radius:10px;
+}
+
+.cell {
+  width:24px;
+  height:24px;
+  border:1px solid #333;
+  background:#111;
+}
+
+.filled { background:cyan; }
+.ghost { background:rgba(0,255,255,0.3); }
+
+#side {
+  text-align:left;
+}
+
+#next {
+  display:grid;
+  grid-template-columns:repeat(4,24px);
+}
+
+.panel {
+  margin-bottom:15px;
+}
+
+button {
+  padding:10px 20px;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+  font-weight:bold;
+}
+
+#startBtn { background:lime; }
+#stopBtn { background:red; color:white; }
+
+#gameover {
+  font-size:30px;
+  color:red;
+  margin:10px;
+  display:none;
+}
 </style>
 </head>
+
 <body>
 
-<h2>Tetris</h2>
+<h2>TETRIS</h2>
 
 <div id="wrapper">
+
   <div id="grid"></div>
-  <div>
-    <p>Next:</p>
-    <div id="next"></div>
+
+  <div id="side">
+
+    <div class="panel">
+      <p>Next:</p>
+      <div id="next"></div>
+    </div>
+
+    <div class="panel">
+      <p>Score: <span id="score">0</span></p>
+      <p>Lines: <span id="lines">0</span></p>
+      <p>Level: <span id="level">1</span></p>
+    </div>
+
+    <button id="startBtn" onclick="startGame()">Start</button>
+    <button id="stopBtn" onclick="endGame()" style="display:none;">Lopeta</button>
+
   </div>
 </div>
 
 <div id="gameover">GAME OVER</div>
-
-
-<div style="margin-top:10px;">
-  <button id="startBtn" onclick="startGame()">Start</button>
-  <button id="stopBtn" onclick="endGame()" style="display:none;">Lopeta</button>
-</div>
 
 <script>
 const COLS=10, ROWS=20;
@@ -57,7 +116,10 @@ const SHAPES=[
  [[1,1,0],[0,1,1]],
 ];
 
-let grid=[], piece, nextPiece, interval, gameOver=false;
+let grid=[], piece, nextPiece, interval;
+let gameOver=false;
+let score=0, lines=0, level=1;
+let speed=500;
 
 function newGrid(){
   grid=Array.from({length:ROWS},()=>Array(COLS).fill(0));
@@ -75,8 +137,8 @@ function collide(x,y,shape){
   for(let py=0;py<shape.length;py++){
     for(let px=0;px<shape[py].length;px++){
       if(!shape[py][px]) continue;
-      const nx=x+px, ny=y+py;
-      if(nx<0||nx>=COLS||ny>=ROWS) return true;
+      let nx=x+px, ny=y+py;
+      if(nx<0 || nx>=COLS || ny>=ROWS) return true;
       if(ny>=0 && grid[ny][nx]) return true;
     }
   }
@@ -84,12 +146,27 @@ function collide(x,y,shape){
 }
 
 function clearLines(){
+  let cleared=0;
+
   for(let y=ROWS-1;y>=0;y--){
     if(grid[y].every(c=>c===1)){
       grid.splice(y,1);
       grid.unshift(Array(COLS).fill(0));
+      cleared++;
       y++;
     }
+  }
+
+  if(cleared>0){
+    lines += cleared;
+    score += cleared * 100;
+
+    // level up every 5 lines
+    level = Math.floor(lines/5) + 1;
+    speed = Math.max(100, 500 - level*50);
+
+    restartInterval();
+    updateUI();
   }
 }
 
@@ -97,33 +174,17 @@ function merge(){
   piece.shape.forEach((row,py)=>{
     row.forEach((v,px)=>{
       if(v){
-        const x=piece.x+px, y=piece.y+py;
-        if(y>=0 && y<ROWS && x>=0 && x<COLS){
-          grid[y][x]=1;
-        }
+        let x=piece.x+px, y=piece.y+py;
+        if(y>=0) grid[y][x]=1;
       }
     });
   });
   clearLines();
 }
 
-function checkGameOver(){
-  // jos uusi palikka törmää heti -> häviö
-  if(collide(piece.x, piece.y, piece.shape)){
-    endGame();
-  }
-}
-
-function endGame(){
-  gameOver=true;
+function restartInterval(){
   clearInterval(interval);
-  document.getElementById("gameover").style.display="block";
-}
-
-function getGhostY(){
-  let y=piece.y;
-  while(!collide(piece.x,y+1,piece.shape)) y++;
-  return y;
+  interval=setInterval(tick, speed);
 }
 
 function tick(){
@@ -137,33 +198,33 @@ function tick(){
     nextPiece=randomPiece();
     drawNext();
 
-    checkGameOver(); // ✅ tarkistus kattoon osumisesta
+    if(collide(piece.x,piece.y,piece.shape)) return endGame();
   }
+
   draw();
 }
 
 function draw(){
   const el=document.getElementById("grid");
   el.innerHTML="";
+
   const ghostY=getGhostY();
 
   for(let y=0;y<ROWS;y++){
     for(let x=0;x<COLS;x++){
-      const div=document.createElement("div");
-      div.className="cell";
+      const d=document.createElement("div");
+      d.className="cell";
 
       let filled=grid[y][x];
 
-      // ghost
       piece.shape.forEach((row,py)=>{
         row.forEach((v,px)=>{
           if(v && piece.x+px===x && ghostY+py===y && !filled){
-            div.classList.add("ghost");
+            d.classList.add("ghost");
           }
         });
       });
 
-      // piece
       piece.shape.forEach((row,py)=>{
         row.forEach((v,px)=>{
           if(v && piece.x+px===x && piece.y+py===y){
@@ -172,16 +233,23 @@ function draw(){
         });
       });
 
-      if(filled) div.classList.add("filled");
+      if(filled) d.classList.add("filled");
 
-      el.appendChild(div);
+      el.appendChild(d);
     }
   }
+}
+
+function getGhostY(){
+  let y=piece.y;
+  while(!collide(piece.x,y+1,piece.shape)) y++;
+  return y;
 }
 
 function drawNext(){
   const el=document.getElementById("next");
   el.innerHTML="";
+
   for(let y=0;y<4;y++){
     for(let x=0;x<4;x++){
       const d=document.createElement("div");
@@ -200,84 +268,55 @@ function drawNext(){
   }
 }
 
-function startGame(){
-  newGrid();
-  piece=randomPiece();
-  nextPiece=randomPiece();
-  drawNext();
-  gameOver=false;
-  document.getElementById("gameover").style.display="none";
-  clearInterval(interval);
-  interval=setInterval(tick,500);
-
-  checkGameOver(); // jos heti häviö
-  draw();
+function updateUI(){
+  document.getElementById("score").textContent=score;
+  document.getElementById("lines").textContent=lines;
+  document.getElementById("level").textContent=level;
+}
 
 function startGame(){
   newGrid();
   piece=randomPiece();
   nextPiece=randomPiece();
-  drawNext();
+
+  score=0; lines=0; level=1; speed=500;
+  updateUI();
+
   gameOver=false;
   document.getElementById("gameover").style.display="none";
-  clearInterval(interval);
-  interval=setInterval(tick,500);
 
-  checkGameOver();
+  restartInterval();
+  drawNext();
   draw();
 
-  // ✅ nappien vaihto
   document.getElementById("startBtn").style.display="none";
   document.getElementById("stopBtn").style.display="inline-block";
 }
-
-}
-
-// ✅ NÄPPÄIMET
-window.addEventListener("keydown",e=>{
-  if(gameOver) return;
-
-// ✅ SPACE = pudota heti maahan
-if(e.key === " " || e.code === "Space"){
-  while(!collide(piece.x, piece.y+1, piece.shape)){
-    piece.y++;
-  }
-}
-``
-
-
-  // ✅ Lopeta peli napit
-  if(e.key==="Escape" || e.key==="q"){
-    endGame();
-    return;
 
 function endGame(){
   gameOver=true;
   clearInterval(interval);
   document.getElementById("gameover").style.display="block";
 
-  // ✅ nappien vaihto takaisin
   document.getElementById("startBtn").style.display="inline-block";
   document.getElementById("stopBtn").style.display="none";
 }
 
-  
+window.addEventListener("keydown",e=>{
+  if(gameOver || !piece) return;
 
-  if(!piece) return;
+  if(e.code==="Space"){
+    while(!collide(piece.x,piece.y+1,piece.shape)){
+      piece.y++;
+    }
+  }
 
- if(e.key==="ArrowLeft" && ...) !collide(piece.x-1,piece.y,piece.shape)) piece.x--;
+  if(e.key==="Escape") return endGame();
+
+  if(e.key==="ArrowLeft" && !collide(piece.x-1,piece.y,piece.shape)) piece.x--;
   if(e.key==="ArrowRight" && !collide(piece.x+1,piece.y,piece.shape)) piece.x++;
   if(e.key==="ArrowDown" && !collide(piece.x,piece.y+1,piece.shape)) piece.y++;
 
   if(e.key==="ArrowUp"){
     const r=rotate(piece.shape);
     if(!collide(piece.x,piece.y,r)) piece.shape=r;
-  }
-
-  draw();
-});
-</script>
-
-</body>
-
-
