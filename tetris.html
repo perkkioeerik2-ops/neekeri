@@ -5,6 +5,7 @@
 <meta charset="UTF-8">
 <title>Tetris</title>
 
+
 <style>
 body {
   font-family: Arial;
@@ -302,7 +303,8 @@ function endGame(){
   document.getElementById("stopBtn").style.display="none";
 }
 
-window.addEventListener("keydown",e=>{
+
+window.addEventListener("keydown", e => {
   if(gameOver || !piece) return;
 
   if(e.code==="Space"){
@@ -317,8 +319,7 @@ window.addEventListener("keydown",e=>{
   if(e.key==="ArrowRight" && !collide(piece.x+1,piece.y,piece.shape)) piece.x++;
   if(e.key==="ArrowDown" && !collide(piece.x,piece.y+1,piece.shape)) piece.y++;
 
-  
- if(e.key==="ArrowUp"){
+  if(e.key==="ArrowUp"){
     const r = rotate(piece.shape);
     if(!collide(piece.x, piece.y, r)) {
       piece.shape = r;
@@ -327,5 +328,7 @@ window.addEventListener("keydown",e=>{
 
   draw();
 });
+</script>
+</body>
+</html>
 ``
-
